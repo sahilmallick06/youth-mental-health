@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindCare — Student Mental Health Support</title>
+
+  <!-- Google font + Chart.js + jsPDF -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg1: #667eea;
+      --bg2: #764ba2;
+      --card: rgba(255,255,255,0.12);
+      --glass: rgba(255,255,255,0.06);
+      --accent: #f093fb;
+      --muted: rgba(255,255,255,0.9);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      color:#fff;
+      background: linear-gradient(120deg,var(--bg1),var(--bg2));
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* Top hero */
+    .hero{
+      min-height:320px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:60px 20px;
+      background-image:
+        linear-gradient(180deg, rgba(10,10,20,0.18), rgba(10,10,20,0.18)),
+        url("https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3&s=a7a9e5ead3d6d8ed2c12e2cf4b7b9f05");
+      background-size:cover;
+      background-position:center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .hero .wrap{max-width:1100px}
+    .logo {
+      position:absolute;
+      top:18px; left:22px; font-weight:700;
+      background:linear-gradient(90deg,#fff, #f093fb);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      font-size:1.2rem;
+    }
+    .hero h1{
+      font-size:2.4rem; margin:0 0 12px; font-weight:800; letter-spacing:-0.5px;
+    }
+    .hero p{margin:0 0 18px; opacity:0.95; font-size:1rem}
+
+    .hero .cta{
+      display:inline-block;
+      background:linear-gradient(90deg,#ffd27a,#ff7bb0);
+      color:#111; padding:12px 20px; border-radius:30px; font-weight:700;
+      text-decoration:none; box-shadow:0 8px 30px rgba(0,0,0,0.15)
+    }
+
+    /* layout */
+    .container{max-width:1100px;margin:30px auto;padding:0 20px}
+    .grid{display:grid; grid-template-columns: 1fr 420px; gap:24px; align-items:start}
+
+    /* card */
+    .card{
+      background:var(--card);
+      padding:20px; border-radius:14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+    }
+    h2{margin-top:0;font-size:1.2rem}
+    .muted { color: rgba(255,255,255,0.85); font-size:0.95rem }
+
+    /* quiz card */
+    .question {
+      font-size:1.05rem;
+      font-weight:600;
+      margin-bottom:14px;
+    }
+    .options { display:flex; flex-direction:column; gap:10px }
+    .opt {
+      background: rgba(255,255,255,0.09); color:#fff; border:1px solid rgba(255,255,255,0.06);
+      padding:12px 14px; border-radius:10px; cursor:pointer; text-align:left;
+      transition:transform .18s, background .18s, border-color .18s;
+    }
+    .opt:hover{ transform:translateY(-4px); background:linear-gradient(90deg,#ffffff15,#ffffff08); border-color: rgba(255,255,255,0.12) }
+    .opt.selected{ background: linear-gradient(90deg,#ffd27a,#ff7bb0); color:#111; border-color: rgba(0,0,0,0.06); transform:scale(1.02) }
+
+    .controls { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:16px }
+    .small { font-size:0.9rem; opacity:0.9 }
+
+    .progress {
+      height:10px; background: rgba(255,255,255,0.06); border-radius:6px; overflow:hidden; margin-top:12px;
+    }
+    .progress > i { display:block; height:100%; width:0; background:linear-gradient(90deg,#ffd27a,#ff7bb0); transition:width .25s }
+
+    /* right column */
+    .side { position:sticky; top:24px }
+    .chartWrap { height:260px; display:flex; align-items:center; justify-content:center }
+
+    /* resources */
+    .media-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:12px }
+    .media { background:var(--glass); padding:12px; border-radius:10px; min-height:80px; display:flex; align-items:center; gap:12px }
+    .media img { width:72px; height:56px; object-fit:cover; border-radius:8px; }
+
+    /* sos box */
+    .sos { background: linear-gradient(90deg,#ff758c,#ff7eb3); padding:14px; border-radius:10px; color:#111; font-weight:700; text-align:center }
+
+    /* login card */
+    #quiz-card{display:none;}
+
+    /* responsive */
+    @media (max-width:980px){
+      .grid{grid-template-columns: 1fr; }
+      .side{position:relative; top:0}
+      .media-grid{grid-template-columns: 1fr}
+    }
+
+    /* footer */
+    footer{ text-align:center; padding:18px 10px; opacity:0.95; font-size:0.95rem; margin-top:30px }
+    a.linkbtn { background:#fff; color:#222; padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:700 }
+  </style>
+</head>
+<body>
+
+  <div class="logo">🧠 MindCare</div>
+
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <h1 id="hero-title">MindCare — Mental Health & Support for Students</h1>
+      <p>Track your mental health, discover which areas need care, and connect with counselors — all in one place.</p>
+      <a class="cta" href="#loginCard" onclick="document.getElementById('userName').focus()">Start Assessment</a>
+    </div>
+  </section>
+
+  <!-- LOGIN CARD -->
+  <section class="card" id="loginCard">
+    <h2>User Information</h2>
+    <p class="muted">Fill in your details to start the self-assessment.</p>
+    <form id="loginForm" style="display:grid; gap:8px; max-width:300px">
+      <input type="text" id="userName" placeholder="Your name" required style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#fff">
+      <input type="number" id="userAge" placeholder="Age" required style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#fff">
+      <select id="userGender" required style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#fff">
+        <option value="" disabled selected>Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+      <button type="button" class="linkbtn" onclick="submitLogin()">Start Assessment</button>
+    </form>
+  </section>
+
+  <!-- MAIN -->
+  <main class="container">
+    <div class="grid">
+      <!-- LEFT: Questionnaire -->
+      <div class="card" id="quiz-card" role="region" aria-label="Assessment">
+        <h2>Self-assessment</h2>
+        <p class="muted">Answer each question honestly. This is not a diagnosis — it helps you identify areas to address.</p>
+
+        <div id="questionArea" style="margin-top:16px;">
+          <div id="qBox">
+            <div class="question" id="qText">Click "Start Assessment" to begin.</div>
+
+            <div class="options" id="optionList"></div>
+
+            <div class="progress" aria-hidden="true">
+              <i id="progFill" style="width:0%"></i>
+            </div>
+
+            <div class="controls">
+              <div class="small" id="qCount">0 / 24</div>
+              <div>
+                <button id="prevBtn" class="linkbtn" style="display:none" onclick="goPrev()">← Prev</button>
+                <button id="nextBtn" class="linkbtn" onclick="skipOrNext()">Next →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top:12px;font-size:0.9rem;opacity:0.95">We respect privacy — responses are stored only in your browser.</p>
+      </div>
+
+      <!-- RIGHT: Summary/Resources -->
+      <aside class="side">
+        <div class="card">
+          <h2>Live Summary</h2>
+          <div class="muted">Category percentages (calculated from your answers)</div>
+          <div class="chartWrap" style="margin-top:12px;">
+            <canvas id="resultChart" width="300" height="240" aria-label="results chart"></canvas>
+          </div>
+          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="linkbtn" onclick="downloadReport()">Download PDF Report</button>
+            <a class="linkbtn" href="#consult" style="background:#ffd27a">Consult a Psychologist</a>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+          <h2>Quick Resources</h2>
+          <div class="media-grid">
+            <div class="media">
+              <img src="https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?q=80&w=600&auto=format&fit=crop" alt="breathing">
+              <div>
+                <div style="font-weight:700">Breathing Exercise</div>
+                <div style="font-size:0.9rem">2–5 minute guided</div>
+              </div>
+            </div>
+
+            <div class="media">
+              <img src="https://images.unsplash.com/photo-1504198453319-5ce911bafcde?q=80&w=600&auto=format&fit=crop" alt="yoga">
+              <div>
+                <div style="font-weight:700">Stretch & Move</div>
+                <div style="font-size:0.9rem">Quick desk workouts</div>
+              </div>
+            </div>
+
+            <div class="media">
+              <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop" alt="music">
+              <div>
+                <div style="font-weight:700">Calming Music</div>
+                <div style="font-size:0.9rem">Lo-fi & nature sounds</div>
+              </div>
+            </div>
+
+            <div class="media">
+              <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop" alt="talk">
+              <div>
+                <div style="font-weight:700">Talk to Someone</div>
+                <div style="font-size:0.9rem">Find support</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+          <h2>SOS — Immediate Help</h2>
+          <div class="sos" style="margin-top:8px;">
+            <div style="font-size:1.05rem">Student Helpline (India): <strong>1800-599-0019</strong></div>
+            <div style="font-size:0.95rem; margin-top:6px">NIMHANS Helpline: <strong>080 46110007</strong></div>
+            <div style="font-size:0.95rem; margin-top:6px">Emergency: <strong>112</strong></div>
+          </div>
+
+          <div style="margin-top:12px; text-align:center">
+            <a href="#sos" class="linkbtn">More Help</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Exercise / Music / Videos -->
+    <section style="margin-top:28px;">
+      <div class="card">
+        <h2>Exercise & Calm Media</h2>
+        <p class="muted">Templates for embedding short videos and audio to help students relax and activate.</p>
+        <div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px">
+          <div style="background:linear-gradient(90deg,#fff2e6,#fff); padding:12px; border-radius:10px">
+            <strong>Guided Breathing</strong>
+            <div style="margin-top:8px">
+              <iframe width="100%" height="150" src="https://www.youtube.com/embed/inpok4MKVLM" title="breathing" frameborder="0" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <div style="background:linear-gradient(90deg,#f0f9ff,#f9f0ff); padding:12px; border-radius:10px">
+            <strong>Quick Stretch</strong>
+            <div style="margin-top:8px">
+              <iframe width="100%" height="150" src="https://www.youtube.com/embed/UBMk30rjy0o" title="stretch" frameborder="0" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <div style="background:linear-gradient(90deg,#fff2f7,#f0fff4); padding:12px; border-radius:10px">
+            <strong>Lo-fi / Focus Music</strong>
+            <div style="margin-top:8px">
+              <audio controls style="width:100%">
+                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                Your browser does not support audio.
+              </audio>
+            </div>
+          </div>
+
+          <div style="background:linear-gradient(90deg,#fffef0,#f4f0ff); padding:12px; border-radius:10px">
+            <strong>Guided Yoga</strong>
+            <div style="margin-top:8px">
+              <iframe width="100%" height="150" src="https://www.youtube.com/embed/pY-o_OAFmBU" title="yoga" frameborder="0" allowfullscreen></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Music Section -->
+    <section style="margin-top:28px;">
+      <div class="card">
+        <h2>Music & Relaxation</h2>
+        <p class="muted">Click below to open relaxing music for focus and calm.</p>
+        <div style="margin-top:12px; text-align:center">
+          <iframe width="100%" height="200" src="https://www.youtube.com/embed/t8yVk0bm684" title="Relaxing Music" frameborder="0" allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- Consult form -->
+    <section id="consult" style="margin-top:28px;">
+      <div class="card">
+        <h2>Connect with a Psychologist</h2>
+        <p class="muted">We can forward your request to partnered psychologists for an online consult. (Demo form — connect your backend later.)</p>
+        <form id="consultForm" style="margin-top:12px; display:grid; gap:8px; grid-template-columns:1fr">
+          <input type="text" id="name" placeholder="Your name" required style="padding:10px;border-radius:8px;border:1px solid rgba(255,
